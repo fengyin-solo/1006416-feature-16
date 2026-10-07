@@ -54,6 +54,43 @@ export function resetRows(key: string): EntryRow[] {
   return rows
 }
 
+// 严读：页面拉数用。数据只读到一半（JSON 被截断）或结构不对时直接抛错，
+// 调用方接住后给「重新拉取」的机会，而不是悄悄拿种子数据顶上、列表详情对不上。
+export function readRowsStrict(key: string): EntryRow[] {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    // 没有本地存储可走时与 saveRows 共用同一份内存数据，保证读写一致。
+    return allRows()[key] ?? []
+  }
+  const raw = window.localStorage.getItem(STORAGE_KEY)
+  if (!raw) {
+    return clone(SEED_ROWS[key] ?? [])
+  }
+  let parsed: Record<string, unknown>
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    throw new Error('本地数据只读到一半就断了，请重新拉取；反复失败可恢复示例数据')
+  }
+  const value = parsed[key]
+  if (value === undefined || value === null) {
+    return clone(SEED_ROWS[key] ?? [])
+  }
+  if (!Array.isArray(value)) {
+    throw new Error(`「${key}」的数据结构不对，读取失败`)
+  }
+  value.forEach((row, index) => {
+    const broken =
+      !row ||
+      typeof row !== 'object' ||
+      typeof (row as EntryRow).id !== 'number' ||
+      typeof (row as EntryRow).status !== 'string'
+    if (broken) {
+      throw new Error(`第 ${index + 1} 条记录损坏，读取中断`)
+    }
+  })
+  return value as EntryRow[]
+}
+
 export function storageKey(): string {
   return STORAGE_KEY
 }

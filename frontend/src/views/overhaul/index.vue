@@ -24,6 +24,20 @@
       </span>
     </p>
 
+    <section class="pending-board">
+      <h3>待安排检修清单</h3>
+      <p v-if="!pendingList.length" class="empty-state plan-empty">
+        暂无待安排的检修；点检判定「需维修」的设备会自动进入这里。
+      </p>
+      <ul v-else class="pending-list">
+        <li v-for="item in pendingList" :key="String(item.id)">
+          <strong>{{ item['检修编号'] }}</strong>
+          · {{ item['检修设备'] }} · {{ item['检修类别'] || '未分类' }}
+          <span v-if="item['来源点检编号']" class="tag">来自点检 {{ item['来源点检编号'] }}</span>
+        </li>
+      </ul>
+    </section>
+
     <form class="filter-bar" @submit.prevent="reload">
       <label v-for="field in filterFields" :key="field" class="filter-item">
         <span>{{ field }}</span>
@@ -91,6 +105,7 @@ const rows = ref<EntryRow[]>([])
 const total = ref(0)
 const errorMessage = ref('')
 const filters = ref<Record<string, string>>({})
+const pendingList = ref<EntryRow[]>([])
 const filterFields = columns.slice(0, 3)
 const statusSummary = computed(() =>
   statuses.map((status: string) => ({
@@ -128,6 +143,8 @@ function reload() {
     const payload = listEntries(meta.key, filters.value)
     rows.value = payload.items
     total.value = payload.total
+    // 待安排清单不受筛选条件影响，始终看全量里还没开工的。
+    pendingList.value = listEntries(meta.key).items.filter((row) => String(row.status) === '待开工')
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '设备检修管理列表读取失败'
   }

@@ -1,5 +1,19 @@
 import type { EntryRow } from './types'
 
+// 点检计划跟着本周走，什么时候打开页面都能看到这一周排没排班。
+const weekMonday = (() => {
+  const now = new Date()
+  const day = (now.getDay() + 6) % 7
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - day)
+})()
+
+function planDate(offset: number): string {
+  const d = new Date(weekMonday.getFullYear(), weekMonday.getMonth(), weekMonday.getDate() + offset)
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mm}-${dd}`
+}
+
 // 示例数据：首次打开时播种，之后浏览器里的改动优先，重置才会回到这份。
 export const SEED_ROWS: Record<string, EntryRow[]> = {
   "weighbridge": [
@@ -484,6 +498,70 @@ export const SEED_ROWS: Record<string, EntryRow[]> = {
       "点检人员": "设备点检样例3",
       "点检日期": "2026-09-03",
       "点检状态": "设备点检样例3"
+    },
+    {
+      "id": 4,
+      "status": "待点检",
+      "pending": true,
+      "abnormal": false,
+      "点检编号": "EQUI-0004",
+      "点检设备": "汽轮发电机组",
+      "点检部位": "",
+      "点检方法": "",
+      "点检结果": "",
+      "点检人员": "",
+      "点检日期": planDate(2),
+      "点检状态": "待点检"
+    }
+  ],
+  "equipcheckPlans": [
+    {
+      "id": 1,
+      "status": "已排班",
+      "pending": false,
+      "abnormal": false,
+      "计划日期": planDate(0),
+      "点检设备": "1号焚烧炉",
+      "点检部位": "炉排及给料口",
+      "点检方法": "目视+听音",
+      "点检人员": "张三",
+      "计划状态": "已排班"
+    },
+    {
+      "id": 2,
+      "status": "已排班",
+      "pending": false,
+      "abnormal": false,
+      "计划日期": planDate(1),
+      "点检设备": "2号余热锅炉",
+      "点检部位": "汽包水位计",
+      "点检方法": "仪表比对",
+      "点检人员": "李四",
+      "计划状态": "已排班"
+    },
+    {
+      "id": 3,
+      "status": "待排班",
+      "pending": true,
+      "abnormal": false,
+      "计划日期": planDate(2),
+      "点检设备": "汽轮发电机组",
+      "点检部位": "前轴承",
+      "点检方法": "振动仪测温",
+      "点检人员": "",
+      "计划状态": "待排班"
+    },
+    {
+      "id": 4,
+      "status": "已排班",
+      "pending": false,
+      "abnormal": false,
+      "计划日期": planDate(3),
+      "点检设备": "烟气净化反应塔",
+      "点检部位": "旋转雾化器",
+      "点检方法": "目视+振动检测",
+      "点检人员": "王五",
+      "计划状态": "已排班"
     }
   ],
   "overhaul": [
