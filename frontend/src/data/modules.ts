@@ -122,6 +122,26 @@ export const MODULES: ModuleMeta[] = [
     actions: ["提交点检", "判定正常", "提出维修"],
     actionTargets: {"提交点检": "点检中", "判定正常": "状态正常", "提出维修": "需维修"},
     metrics: ["待点检设备", "状态正常设备", "需维修设备"],
+    // 排班四要素缺一不可；点检人员是岗位安排，空着就不许登记、也不许提交点检。
+    requiredFields: ["点检编号", "点检设备", "点检部位", "点检方法", "点检人员", "点检日期"],
+    // 同一台设备的点检编号不能重号。
+    uniqueRules: [
+      { fields: ["点检编号"], scopeField: "点检设备", label: "点检编号" },
+    ],
+    // 同一台设备重复登记只留一条：存在未完结记录时挡回。
+    singleActive: { scopeField: "点检设备", activeStatuses: ["待点检", "点检中"] },
+    dateField: "点检日期",
+    statusMirrorField: "点检状态",
+    terminalStatuses: ["状态正常", "需维修"],
+    abnormalStatuses: ["需维修"],
+    actionGuards: {
+      // 待点检 → 点检中，且必须先排了点检岗位。
+      "提交点检": { allowFrom: ["待点检"], requiredFields: ["点检人员", "点检部位", "点检方法"] },
+      // 点检中 → 状态正常，不许从待点检直接跳到状态正常。
+      "判定正常": { allowFrom: ["点检中"] },
+      // 点检中 → 需维修，判定需维修后同步进检修待安排清单。
+      "提出维修": { allowFrom: ["点检中"] },
+    },
   },
   {
     key: "overhaul",
